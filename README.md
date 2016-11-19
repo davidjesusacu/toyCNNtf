@@ -12,3 +12,8 @@ faces have been rotated, scaled and aligned to make the task easier. The faces
 have been labeled by experts and research assistants based on their expression.
 These expressions fall into one of seven categories: 1-Anger, 2-Disgust,
 3-Fear, 4-Happy, 5-Sad, 6-Surprise, 7-Neutral
+#MODEL
+Two Conv Layers + FC Layer
+
+
+
