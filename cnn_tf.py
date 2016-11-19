@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from util import LoadData,DisplayPlot
+from util import LoadData, DisplayPlot
 
 batch_size = 100
 
@@ -39,15 +39,15 @@ inputs_train, inputs_valid, inputs_test, target_train, target_valid, \
 trX = inputs_train.reshape(-1, 48, 48, 1)  # 48x48x1 input img
 trY = target_train
 
-valX= inputs_valid.reshape(-1, 48, 48, 1)
-valY= target_valid
+valX = inputs_valid.reshape(-1, 48, 48, 1)
+valY = target_valid
 
 dataDim = {'h': 48, 'w': 48, 'c': 1}
 nfilters = [8, 16]
 fsize = 5
 num_outpus = 7
 eps = 0.001
-num_epochs=40
+num_epochs = 40
 
 X = tf.placeholder("float", [None, dataDim['h'], dataDim['w'], dataDim['c']])
 Y = tf.placeholder("float", [None, num_outpus])
@@ -71,17 +71,19 @@ train_op = tf.train.AdamOptimizer(learning_rate=eps).minimize(cost)
 
 predict_op = tf.argmax(py_x, 1)
 
-#Evaluate model
+# Evaluate model
 correct_pred = tf.equal(tf.argmax(py_x, 1), tf.argmax(Y, 1))
 accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
 
 idx = np.arange(trX.shape[0])
+
+#For plotting the data
+train_ce_list = []
+train_acc_list = []
+valid_ce_list = []
+valid_acc_list = []
 # Launch the graph in a session
-train_ce_list=[]
-train_acc_list=[]
-valid_ce_list=[]
-valid_acc_list=[]
 with tf.Session() as sess:
     tf.initialize_all_variables().run()
     for epoch in range(num_epochs):
@@ -93,20 +95,17 @@ with tf.Session() as sess:
         for start, end in training_batch:
             sess.run(train_op, feed_dict={
                      X: trX[start:end], Y: trY[start:end]})
-            cost_tr,acc_tr = sess.run(
-                [cost,accuracy], feed_dict={X: trX[start:end], Y: trY[start:end]})
-            print "Epoch %i Train CE:%.5f Train Accuracy %.5f" % (epoch, cost_tr,acc_tr)
-        
-        # Checking in the val set 
-        cost_val,acc_val= sess.run(
-                [cost,accuracy], feed_dict={X: valX, Y:valY})
-        print "Epoch %i Valid CE:%.5f Valid Accuracy %.5f" % (epoch, cost_val,acc_val)
+            cost_tr, acc_tr = sess.run(
+                [cost, accuracy], feed_dict={X: trX[start:end], Y: trY[start:end]})
+            print "Epoch %i Train CE:%.5f Train Accuracy %.5f" % (epoch, cost_tr, acc_tr)
+
+        # Checking in the val set
+        cost_val, acc_val = sess.run(
+            [cost, accuracy], feed_dict={X: valX, Y: valY})
+        print "Epoch %i Valid CE:%.5f Valid Accuracy %.5f" % (epoch, cost_val, acc_val)
         train_ce_list.append((epoch, cost_tr))
         train_acc_list.append((epoch, acc_tr))
         valid_ce_list.append((epoch, cost_val))
         valid_acc_list.append((epoch, acc_val))
         DisplayPlot(train_ce_list, valid_ce_list, 'Cross Entropy', number=0)
         DisplayPlot(train_acc_list, valid_acc_list, 'Accuracy', number=1)
-
-
-
