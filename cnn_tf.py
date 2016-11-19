@@ -119,3 +119,4 @@ with tf.Session() as sess:
             DisplayPlot(train_acc_list, valid_acc_list, 'Accuracy', number=1)
     saver.save(sess, filename)
     print("Model saved in file: %s" % filename)
+    raw_input("...")
