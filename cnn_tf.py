@@ -2,8 +2,6 @@ import tensorflow as tf
 import numpy as np
 from util import LoadData, DisplayPlot
 
-batch_size = 100
-
 
 def init_weights(shape):
     return tf.Variable(tf.random_normal(shape, stddev=0.01))
@@ -36,25 +34,29 @@ def model(X, w1, w2, w3, b1, b2, b3):
 inputs_train, inputs_valid, inputs_test, target_train, target_valid, \
     target_test = LoadData('data/toronto_face.npz')
 
-trX = inputs_train.reshape(-1, 48, 48, 1)  # 48x48x1 input img
-trY = target_train
-
-valX = inputs_valid.reshape(-1, 48, 48, 1)
-valY = target_valid
-
 dataDim = {'h': 48, 'w': 48, 'c': 1}
 nfilters = [8, 16]
 fsize = 5
 num_outpus = 7
 eps = 0.001
 num_epochs = 40
+batch_size = 100
 
+# HxWxC input img
+trX = inputs_train.reshape(-1, dataDim['h'], dataDim['w'], dataDim['c'])
+trY = target_train
+
+valX = inputs_valid.reshape(-1, dataDim['h'], dataDim['w'], dataDim['c'])
+valY = target_valid
+
+
+# Defining the place holders
 X = tf.placeholder("float", [None, dataDim['h'], dataDim['w'], dataDim['c']])
 Y = tf.placeholder("float", [None, num_outpus])
 
-# 5x5x1 conv, 8 filters
+# FxFxC conv, # filters
 w1 = init_weights([fsize, fsize, dataDim['c'], nfilters[0]])
-# 5x5x8 conv, 16 Filters
+# FxFx #filters1 conv, #Filters 2
 w2 = init_weights([fsize, fsize, nfilters[0], nfilters[1]])
 
 # FC 1024 inputs, num_outpus  (labels)
@@ -75,14 +77,18 @@ predict_op = tf.argmax(py_x, 1)
 correct_pred = tf.equal(tf.argmax(py_x, 1), tf.argmax(Y, 1))
 accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
+# Adding a saver
+saver = tf.train.Saver()
+filename = 'cnn_tf.ckpt'
 
 idx = np.arange(trX.shape[0])
 
-#For plotting the data
+# For plotting the data
 train_ce_list = []
 train_acc_list = []
 valid_ce_list = []
 valid_acc_list = []
+display = 5
 # Launch the graph in a session
 with tf.Session() as sess:
     tf.initialize_all_variables().run()
@@ -92,12 +98,12 @@ with tf.Session() as sess:
         trY = trY[idx]
         training_batch = zip(range(0, len(trX), batch_size),
                              range(batch_size, len(trX) + 1, batch_size))
-        for start, end in training_batch:
+        for i, (start, end) in enumerate(training_batch):
             sess.run(train_op, feed_dict={
                      X: trX[start:end], Y: trY[start:end]})
             cost_tr, acc_tr = sess.run(
                 [cost, accuracy], feed_dict={X: trX[start:end], Y: trY[start:end]})
-            print "Epoch %i Train CE:%.5f Train Accuracy %.5f" % (epoch, cost_tr, acc_tr)
+            print "Epoch %i Step %i Train CE:%.5f Train Accuracy %.5f" % (epoch, i, cost_tr, acc_tr)
 
         # Checking in the val set
         cost_val, acc_val = sess.run(
@@ -107,5 +113,9 @@ with tf.Session() as sess:
         train_acc_list.append((epoch, acc_tr))
         valid_ce_list.append((epoch, cost_val))
         valid_acc_list.append((epoch, acc_val))
-        DisplayPlot(train_ce_list, valid_ce_list, 'Cross Entropy', number=0)
-        DisplayPlot(train_acc_list, valid_acc_list, 'Accuracy', number=1)
+        if (epoch % display) == 0:
+            DisplayPlot(train_ce_list, valid_ce_list,
+                        'Cross Entropy', number=0)
+            DisplayPlot(train_acc_list, valid_acc_list, 'Accuracy', number=1)
+    saver.save(sess, filename)
+    print("Model saved in file: %s" % filename)
